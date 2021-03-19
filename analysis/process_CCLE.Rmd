@@ -1,0 +1,73 @@
+---
+title: "process_CCLE"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r prepare}
+# set directories
+data_dir = "../data/"
+
+# needed data
+ccle_orig <- read.delim(paste0(data_dir, "original/ccle_orig.tsv"), sep = "\t",
+                        header = TRUE,fileEncoding = "UTF-16", na.strings = " ")
+```
+
+```{r process}
+# * keep only the raw data
+shiny_ccle <- subset(ccle_orig, LAYER_TYPE == "RAW")
+
+# * keep only the controls (NC and AC) and combos tested at 8 concentrations
+# starting at 8 and decreasing in 3.16 fold dilutions
+# * removes 3,104 of 1,157,777 observations
+shiny_ccle <- subset(shiny_ccle, WELL_TYPE %in% c("NC", "AC") |
+                     CONCENTRATION %in% c(8, 2.53164601, 0.801153719,
+                                          0.253529608, 0.0802308992,
+                                          0.0253895205, 0.00803465955,
+                                          0.00254261401))
+
+# * find the combos that appear at all 8 doses
+# 1,324 of 52,072 total combos have < 8 doses
+tmp <- subset(shiny_ccle, WELL_TYPE == "SA")
+tmp <- aggregate(tmp$CONCENTRATION,
+                 by = list(tmp$CELL_LINE_NAME, tmp$COMPOUND,
+                           tmp$ASSAY_PLATE_NAME, tmp$COLUMN_ID), FUN = length)
+
+# * add a COMBO_ID column
+# * this will allow the differentiation between multiple replicates for each
+# drug-CL combination
+tmp$COMBO_ID <- 1:nrow(tmp)
+
+# * keep only the combos that appear at all 8 doses and the control wells
+tmp <- merge(x = shiny_ccle, y = tmp[tmp$x == 8,-5],
+             by.x = c("CELL_LINE_NAME","COMPOUND","ASSAY_PLATE_NAME","COLUMN_ID"),
+             by.y = names(tmp)[1:4])
+shiny_ccle$COMBO_ID <- NA
+shiny_ccle <- rbind(tmp, subset(shiny_ccle, WELL_TYPE != "SA"))
+
+# * remove any plates with no drugged wells
+# * removes 258 of 14,445 plates
+drugPlates <- unique(subset(shiny_ccle, WELL_TYPE == "SA")$ASSAY_PLATE_NAME)
+shiny_ccle <- subset(shiny_ccle, ASSAY_PLATE_NAME %in% drugPlates)
+
+# * put intensities on the log2 scale
+shiny_ccle$VALUE <- log2(shiny_ccle$VALUE)
+
+# * calculate the median untreated controls for each plate
+tmp <- subset(shiny_ccle, WELL_TYPE == "NC",
+              select = c("ASSAY_PLATE_NAME","VALUE"))
+tmp <- aggregate(tmp$VALUE, by = list(tmp$ASSAY_PLATE_NAME), FUN = median)
+names(tmp) <- c("ASSAY_PLATE_NAME","UNTREAT")
+shiny_ccle <- merge(x = shiny_ccle, y = tmp)
+
+# * keep columns of interest
+shiny_ccle <- shiny_ccle[,c(1:4,9:14)]
+```
+
+```{r save}
+save(shiny_ccle, file = paste0(data_dir, "processed/shiny_ccle.rda"),
+     compress = "xz")
+```

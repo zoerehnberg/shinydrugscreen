@@ -1,0 +1,104 @@
+---
+title: "process_fastSubset"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r prepare}
+# set directories
+data_dir = "../data/"
+
+# needed data
+load(paste0(data_dir, "processed/shiny_gdsc1.rda"))
+load(paste0(data_dir, "processed/shiny_gdsc2.rda"))
+load(paste0(data_dir, "processed/shiny_ccle.rda"))
+```
+
+# Processing data for the fastSubset functions.
+
+```{r ID}
+clID <- unique(shiny_gdsc1$COSMIC_ID)
+drugID <- na.omit(unique(shiny_gdsc1$DRUG_ID))
+comboID <- na.omit(unique(shiny_gdsc1$COMBO_ID))
+clID_ccle <- unique(shiny_ccle$CELL_LINE_NAME)
+drugID_ccle <- unique(subset(shiny_ccle, WELL_TYPE == "SA")$COMPOUND)
+comboID_ccle <- na.omit(unique(shiny_ccle$COMBO_ID))
+clID_gdsc2 <- unique(shiny_gdsc2$COSMIC_ID)
+drugID_gdsc2 <- unique(subset(shiny_gdsc2, !is.na(COMBO_ID))$DRUG_ID)
+comboID_gdsc2 <- na.omit(unique(shiny_gdsc2$COMBO_ID))
+```
+
+```{r save_ID}
+ID_all <- list("clID_gdsc1" = clID, "drugID_gdsc1" = drugID,
+                  "comboID_gdsc1" = comboID,
+                  "clID_ccle" = clID_ccle, "drugID_ccle" = drugID_ccle,
+                  "comboID_ccle" = comboID_ccle, "clID_gdsc2" = clID_gdsc2,
+                  "drugID_gdsc2" = drugID_gdsc2, "comboID_gdsc2" = comboID_gdsc2)
+save(ID_all, file = paste0(data_dir, "processed/ID_all.rda"), compress = "xz")
+```
+
+
+```{r GDSC1}
+cl_gdsc1 <- vector(mode = "list", length = length(clID))
+for(i in 1:length(cl_gdsc1)){
+  cl_gdsc1[[i]] <- which(shiny_gdsc1$COSMIC_ID == clID[i])
+}
+
+drug_gdsc1 <- vector(mode = "list", length = length(drugID))
+for(i in 1:length(drug_gdsc1)){
+  drug_gdsc1[[i]] <- which(shiny_gdsc1$DRUG_ID == drugID[i])
+}
+
+combo_gdsc1 <- vector(mode = "list", length = length(comboID))
+for(i in 1:length(combo_gdsc1)){
+  if(comboID[i] < 281498) combo_gdsc1[[i]] <- ((i-1)*9 + 1):(i*9)
+  else if(comboID[i] == 281498) combo_gdsc1[[i]] <- ((i-1)*9 + 1):(i*5 + 1125988)
+  else combo_gdsc1[[i]] <- ((i-1)*5 + 1125989):(i*5 +1125988)
+}
+```
+
+```{r CCLE}
+cl_ccle <- vector(mode = "list", length = length(clID_ccle))
+for(i in 1:length(cl_ccle)){
+  cl_ccle[[i]] <- which(shiny_ccle$CELL_LINE_NAME == clID_ccle[i])
+}
+
+drug_ccle <- vector(mode = "list", length = length(drugID_ccle))
+for(i in 1:length(drug_ccle)){
+  drug_ccle[[i]] <- which(shiny_ccle$COMPOUND == drugID_ccle[i])
+}
+
+combo_ccle <- vector(mode = "list", length = length(comboID_ccle))
+for(i in 1:length(combo_ccle)){
+  combo_ccle[[i]] <- which(shiny_ccle$COMBO_ID == comboID_ccle[i])
+}
+```
+
+```{r GDSC2}
+cl_gdsc2 <- vector(mode = "list", length = length(clID_gdsc2))
+for(i in 1:length(cl_gdsc2)){
+  cl_gdsc2[[i]] <- which(shiny_gdsc2$COSMIC_ID == clID_gdsc2[i])
+}
+
+drug_gdsc2 <- vector(mode = "list", length = length(drugID_gdsc2))
+for(i in 1:length(drug_gdsc2)){
+  drug_gdsc2[[i]] <- which(shiny_gdsc2$DRUG_ID == drugID_gdsc2[i])
+}
+
+combo_gdsc2 <- vector(mode = "list", length = length(comboID_gdsc2))
+for(i in 1:length(combo_gdsc2)){
+  combo_gdsc2[[i]] <- ((i-1)*7 + 1):(i*7)
+}
+```
+
+```{r save_index}
+index_all <- list("cl_gdsc1" = cl_gdsc1, "drug_gdsc1" = drug_gdsc1,
+                  "combo_gdsc1" = combo_gdsc1, "cl_ccle" = cl_ccle,
+                  "drug_ccle" = drug_ccle, "combo_ccle" = combo_ccle,
+                  "cl_gdsc2" = cl_gdsc2, "drug_gdsc2" = drug_gdsc2,
+                  "combo_gdsc2" = combo_gdsc2)
+save(index_all, file = paste0(data_dir, "processed/index_all.rda"), compress = "xz")
+```

@@ -1,0 +1,191 @@
+---
+title: "process_maps"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r prepare}
+# set directories
+data_dir = "../data/"
+
+# needed data
+gdsc1_orig <- readr::read_csv(paste0(data_dir, "original/gdsc1_orig.csv"),
+                              col_types = "-------ic------i--")
+gdsc2_orig <- readr::read_csv(paste0(data_dir, "original/gdsc2_orig.csv"),
+                              col_types = "-------ic------i--")
+load(paste0(data_dir, "processed/shiny_ccle.rda"))
+
+CL_gdsc <- readxl::read_xlsx(paste0(data_dir, "original/CL_gdsc.xlsx"), sheet = 2)
+drug_gdsc <- readr::read_csv(paste0(data_dir, "original/drug_gdsc.csv"))
+CL_ccle <- readxl::read_xls(paste0(data_dir, "original/annotate_ccle.xls"),
+                            sheet = 2, skip = 2)
+drug_ccle <- readxl::read_xls(paste0(data_dir, "original/annotate_ccle.xls"),
+                              sheet = 7, skip = 2)
+```
+
+# Cell Lines
+
+```{r gdsc_cl}
+# GDSC
+gdsc_cl <- rbind(gdsc1_orig[,c("COSMIC_ID","CELL_LINE_NAME")],
+                 gdsc2_orig[,c("COSMIC_ID","CELL_LINE_NAME")])
+gdsc_cl <- gdsc_cl[!duplicated(gdsc_cl),]
+
+# * simplify cell line name
+gdsc_cl$regCL <- toupper(gsub("[[:punct:] ]", "", gdsc_cl$CELL_LINE_NAME))
+```
+
+```{r ccle_cl}
+# CCLE
+ccle_cl <- shiny_ccle[,"CELL_LINE_NAME",drop = FALSE]
+ccle_cl <- ccle_cl[!duplicated(ccle_cl),,drop = FALSE]
+
+# * simplify cell line name
+ccle_cl$regCL <- toupper(gsub("[[:punct:] ]", "", ccle_cl$CELL_LINE_NAME))
+
+# * add longer version of CCLE names
+tmp <- CL_ccle[,1:2]
+tmp <- tmp[!duplicated(tmp),]
+names(tmp) <- c("longName", "shortName")
+ccle_paper <- subset(tmp, shortName %in% ccle_cl$CELL_LINE_NAME)
+```
+
+```{r direct_map}
+# DIRECTLY MAP CELL_LINE_NAME
+clMap_direct <- merge(x = gdsc_cl, y = ccle_cl, by = "regCL")
+clMap_direct$regCL <- NULL
+names(clMap_direct) <- c("GDSC_CL","GDSC_CL_NAME","CCLE_CL")
+```
+
+```{r paper_map}
+# FROM GDSC/CCLE PAPER
+# * get mapping and remove NAs
+clMap_paper <- readxl::read_excel(paste0(data_dir, "original/GDSC_to_CCLE.xlsx"),
+                                    range = readxl::cell_cols("C:D"), na = "NA")
+clMap_paper <- clMap_paper[complete.cases(clMap_paper),]
+
+# * get GDSC cell lines
+clMap_paper$gdsc.name <- toupper(gsub("[[:punct:] ]", "",
+                                        clMap_paper$gdsc.name))
+clMap_paper <- merge(x = clMap_paper, y = gdsc_cl,
+                       by.x = "gdsc.name", by.y = "regCL")
+
+# * get CCLE cell lines
+clMap_paper <- merge(x = clMap_paper, y = ccle_paper,
+                       by.x = "ccle.name", by.y = "longName")
+
+# * clean up dataframe
+clMap_paper[,c("ccle.name","gdsc.name")] <- NULL
+clMap_paper <- clMap_paper[!duplicated(clMap_paper),]
+names(clMap_paper) <- c("GDSC_CL","GDSC_CL_NAME","CCLE_CL")
+```
+
+```{r combine_maps}
+# COMBINE THESE MAPS
+map_CL <- rbind(clMap_direct, clMap_paper)
+map_CL <- map_CL[!duplicated(map_CL),]
+
+# ADD ALL CELL LINES
+map_CL <- merge(x = map_CL, y = gdsc_cl[,1:2], by.x = c("GDSC_CL","GDSC_CL_NAME"),
+                by.y = c("COSMIC_ID","CELL_LINE_NAME"), all = TRUE)
+map_CL <- merge(x = map_CL, y = ccle_cl[,1, drop = FALSE],
+                by.x = "CCLE_CL", by.y = "CELL_LINE_NAME", all = TRUE)
+```
+
+```{r annotate}
+# ADD ANNOTATION
+names(CL_gdsc) <- c("GDSC_CL_NAME","GDSC_CL","Site GDSC","Histology GDSC")
+
+CL_ccle <- CL_ccle[,c(2,4:9,11)]
+names(CL_ccle) <- c("CCLE_CL","Gender CCLE","Site CCLE","Histology CCLE",
+                    "Histology Subtype CCLE","Tumor Type 1 CCLE",
+                    "Tumor Type 2 CCLE","Source CCLE")
+
+map_CL <- merge(x = map_CL, y = CL_gdsc, by = c("GDSC_CL","GDSC_CL_NAME"),
+                all = TRUE)
+map_CL <- merge(x = map_CL, y = CL_ccle, by = "CCLE_CL", all = TRUE)
+map_CL <- subset(map_CL, CCLE_CL %in% shiny_ccle$CELL_LINE_NAME |
+                   GDSC_CL %in% gdsc_cl$COSMIC_ID)
+names(map_CL)[1:3] <- c("CCLE Name","COSMIC ID","GDSC Name")
+save(map_CL, file = paste0(data_dir, "processed/map_CL.rda"), compress = "xz")
+```
+
+# Drugs
+
+```{r map_drug}
+# DRUG MAP
+# * Barretina, J., Caponigro, G., Stransky, N. et al. Addendum: The Cancer Cell Line Encyclopedia enables predictive modelling of anticancer drug sensitivity. Nature 565, E5–E6 (2019). https://doi.org/10.1038/s41586-018-0722-x
+#   - accessed on 3/5/2021 from: "https://www.nature.com/articles/s41586-018-0722-x/tables/2"
+# * The Cancer Cell Line Encyclopedia Consortium., Broad Institute., Stransky, N. et al. Pharmacogenomic agreement between two cancer cell line data sets. Nature 528, 84–87 (2015). https://doi.org/10.1038/nature15736
+
+# * drug names from GDSC/CCLE paper
+PAPER_DRUG <- c("Nilotinib","Nilotinib","17-AAG","PHA-665752",
+                "Lapatinib","Nutlin-3","Nutlin-3","AZD0530",
+                "AZD0530","PF2341066","Sorafenib","PD-0325901",
+                "PD-0332991","Paclitaxel","AZD6244","PLX4720",
+                "PLX4720","TAE684","Erlotinib")
+# * CCLE drug names
+CCLE_DRUG <- c("NVP-AMN107-AA-2", "NVP-AMN107-NX-5","NVP-BAG500-NX-4",
+               "NVP-BBD023-NX-2","NVP-BCZ548-AN-1","NVP-BEP453-NX-8",
+               "NVP-BEP453-NX-5","NVP-BHT496-NX-2","NVP-BHT496-NX-3",
+               "NVP-BQK827-AA-1","NVP-LBK294-NX-2","NVP-LBW624-NX-2",
+               "NVP-LCY393-NX-3","NVP-LEE850-NX-1","NVP-LFE158-NX-3",
+               "NVP-LFL230-NX-3","NVP-LFL230-NX-3","NVP-TAE684-NX-3",
+               "NVP-XBX005-NX-1")
+# * GDSC drug names
+GDSC_DRUG <- c(1013, 1013, 1026, 6, 119, 1047, 1047, 38, 38, 37,
+               30, 1060, 1054, 11, 1062, 1036, 1371, 35, 1)
+
+drugMap <- data.frame(PAPER_DRUG, CCLE_DRUG, GDSC_DRUG)
+```
+
+```{r gdsc_drug}
+# GDSC
+drug_gdsc <- drug_gdsc[,c(1,3,5,6)]
+names(drug_gdsc) <- c("GDSC_DRUG","GDSC_DRUG_NAME","Target GDSC",
+                      "Target Pathway GDSC")
+```
+
+```{r ccle_drug}
+# CCLE
+PAPER_DRUG <- c("Paclitaxel","Irinotecan","Irinotecan",
+                "Topotecan","Panobinostat","L-685458",
+                "Tanespimycin","LBW242","Nutlin-3",
+                "Nutlin-3","PD-0332991","Saracatinib",
+                "Saracatinib","PLX4720","PD-0325901",
+                "Selumetinib","RAF265","Nilotinib",
+                "Nilotinib","TAE684","Crizotinib",
+                "Erlotinib","Lapatinib","Dovitinib",
+                "AEW541","PHA-665752","Sorafenib")
+CCLE_DRUG <- c("NVP-LEE850-NX-1","NVP-LBN777-AA-7","NVP-LBN777-NX-1",
+               "NVP-LBN816-AA-1","NVP-LBH589-CU-2","CGP055750-NX-1",
+               "NVP-BAG500-NX-4","NVP-LBW242-NX-5","NVP-BEP453-NX-5",
+               "NVP-BEP453-NX-8","NVP-LCY393-NX-3","NVP-BHT496-NX-2",
+               "NVP-BHT496-NX-3","NVP-LFL230-NX-3","NVP-LBW624-NX-2",
+               "NVP-LFE158-NX-3","NVP-RAF265-NX-1","NVP-AMN107-AA-2",
+               "NVP-AMN107-NX-5","NVP-TAE684-NX-3","NVP-BQK827-AA-1",
+               "NVP-XBX005-NX-1","NVP-BCZ548-AN-1","NVP-TKI258-CU-2",
+               "NVP-AEW541-NX-9","NVP-BBD023-NX-2","NVP-LBK294-NX-2")
+tmp <- data.frame(PAPER_DRUG,CCLE_DRUG)
+
+drug_ccle <- drug_ccle[,c(1:5,7)]
+names(drug_ccle) <- c("CCLE_DRUG1","CCLE_DRUG2","Target CCLE","Mechanism CCLE",
+                      "Class CCLE","Organization CCLE")
+drug_ccle$CCLE_DRUG1 <- trimws(drug_ccle$CCLE_DRUG1, whitespace = "[\\h\\v]")
+
+drug_ccle <- rbind(merge(x = drug_ccle, y = tmp, by.x = "CCLE_DRUG1",
+                   by.y = "PAPER_DRUG"),
+                   merge(x = drug_ccle, y = tmp, by.x = "CCLE_DRUG2",
+                   by.y = "PAPER_DRUG"))
+```
+
+```{r combine}
+map_drug <- merge(x = drugMap, y = drug_gdsc, by = "GDSC_DRUG", all = TRUE)
+map_drug <- merge(x = map_drug, y = drug_ccle, by = "CCLE_DRUG", all = TRUE)
+map_drug$PAPER_DRUG <- NULL
+names(map_drug)[c(1:3,6:7)] <- c("CCLE ID","GDSC ID","GDSC Name","CCLE Name 1","CCLE Name 2")
+save(map_drug, file = paste0(data_dir, "processed/map_drug.rda"), compress = "xz")
+```

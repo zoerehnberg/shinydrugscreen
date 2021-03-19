@@ -1,0 +1,105 @@
+---
+title: "process_GDSC1"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r prepare}
+# set directories
+data_dir = "../data/"
+
+# needed data
+gdsc1_orig <- readr::read_csv(paste0(data_dir, "original/gdsc1_orig.csv"),
+                              col_types = "--c----i-----icidd")
+```
+
+```{r process}
+prepGDSC1 <- function(data = gdsc1_orig){
+
+  #' log the intensities
+  data$INTENSITY <- log2(data$INTENSITY)
+
+  #' get median untreated controls and site for each plate
+  tmp <- data[,c("SCAN_ID","TAG","DRUG_ID","INTENSITY")]
+  scans <- unique(tmp$SCAN_ID)
+  plateInfo <- data.frame(SCAN_ID = scans, UNTREAT = NA, SITE = NA)
+  for(i in 1:length(scans)){
+    tmp.untreat <- subset(tmp, SCAN_ID == scans[i] & TAG == "NC-0")$INTENSITY
+    plateInfo[i,2] <- median(tmp.untreat)
+
+    if(subset(tmp, SCAN_ID == scans[i] & !is.na(DRUG_ID))$DRUG_ID[1] < 1000){
+      plateInfo[i,3] <- "MGH"
+    }
+    else plateInfo[i,3] <- "WTSI"
+  }
+  return.dat <- merge(x = data, y = plateInfo, by = "SCAN_ID",
+                      all = TRUE)
+
+  #' keep only the variables of interest
+  return.dat <- return.dat[,c("SCAN_ID","COSMIC_ID","DRUG_ID","TAG","POSITION",
+                              "CONC","UNTREAT","INTENSITY","SITE")]
+  return(return.dat)
+}
+shiny_gdsc1 <- prepGDSC1()
+```
+
+```{r combo}
+#' * assign combo IDs
+tmp <- subset(shiny_gdsc1, !is.na(DRUG_ID),
+              select = c("SCAN_ID","COSMIC_ID","DRUG_ID","TAG","POSITION"))
+tmp <- tmp[order(tmp$SCAN_ID, tmp$COSMIC_ID, tmp$DRUG_ID, tmp$POSITION, tmp$TAG),]
+
+scan9 <- tmp[,c(1,4)]
+scan9$DOSE <- sapply(scan9$TAG, function(x) strsplit(x, split = "-")[[1]][2])
+scan9 <- subset(scan9, DOSE == "D9")$SCAN_ID
+scan9 <- unique(scan9)
+
+tmp9 <- subset(tmp, SCAN_ID %in% scan9)
+tmp9$COMBO_ID <- rep(1:(nrow(tmp9)/9), each = 9)
+tmp5 <- subset(tmp, !(SCAN_ID %in% scan9))
+tmp5$COMBO_ID <- rep((max(tmp9$COMBO_ID)+1):(max(tmp9$COMBO_ID)+(nrow(tmp5)/5)),
+                     each = 5)
+tmp <- rbind(tmp9, tmp5)
+shiny_gdsc1 <- merge(x = shiny_gdsc1, y = tmp,
+                    by = c("SCAN_ID","COSMIC_ID","DRUG_ID","TAG","POSITION"),
+                    all = TRUE)
+shiny_gdsc1 <- shiny_gdsc1[order(shiny_gdsc1$COMBO_ID),]
+```
+
+```{r save}
+save(shiny_gdsc1, file = paste0(data_dir, "processed/shiny_gdsc1.rda"),
+     compress = "xz")
+```
+
+```{r format}
+format_gdsc1 <- subset(shiny_gdsc1, !is.na(DRUG_ID),
+                       select = c("SCAN_ID","DRUG_ID","POSITION"))
+# get row and column
+tmp <- aggregate(format_gdsc1$POSITION, by = list(format_gdsc1$SCAN_ID), FUN = max)
+tmp384 <- subset(format_gdsc1, SCAN_ID %in% subset(tmp, x > 96)$Group.1)
+tmp384$ROW <- ceiling(tmp384$POSITION/24)
+tmp384$COL <- tmp384$POSITION - ((tmp384$ROW-1) * 24)
+
+tmp96 <- subset(format_gdsc1, SCAN_ID %in% subset(tmp, x <= 96)$Group.1)
+tmp96$ROW <- ceiling(tmp96$POSITION/12)
+tmp96$COL <- tmp96$POSITION - ((tmp96$ROW-1) * 12)
+tmp <- rbind(tmp384, tmp96)
+
+# get min and max column
+format_gdsc1 <- aggregate(tmp$COL, by = list(tmp$SCAN_ID, tmp$DRUG_ID),FUN = min)
+names(format_gdsc1) <- c("SCAN_ID","DRUG_ID","MIN_COL")
+tmp1 <- aggregate(tmp$COL, by = list(tmp$SCAN_ID, tmp$DRUG_ID), FUN = max)
+names(tmp1) <- c("SCAN_ID","DRUG_ID","MAX_COL")
+format_gdsc1 <- merge(x = format_gdsc1, y = tmp1, by = c("SCAN_ID","DRUG_ID"))
+tmp <- aggregate(tmp$ROW, by = list(tmp$SCAN_ID, tmp$DRUG_ID), FUN = min)
+names(tmp) <- c("SCAN_ID","DRUG_ID","ROW")
+format_gdsc1 <- merge(x = format_gdsc1, y = tmp, by = c("SCAN_ID","DRUG_ID"))
+format_gdsc1$ROW <- as.numeric(format_gdsc1$ROW)
+format_gdsc1$SCAN_ID <- as.numeric(format_gdsc1$SCAN_ID)
+
+save(format_gdsc1, file = paste0(data_dir, "processed/format_gdsc1.rda"),
+     compress = "xz")
+```

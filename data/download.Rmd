@@ -1,0 +1,30 @@
+---
+title: "Download data"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+This downloads the original data from the online sources.  The date downloaded is:
+```{r get_date}
+format(Sys.Date(), format="%Y %B %d")
+```
+
+```{r download_data}
+base_directory = "original/"
+
+download.file("ftp://ftp.sanger.ac.uk/pub4/cancerrxgene/releases/release-8.2/GDSC1_public_raw_data_25Feb20.csv", paste0(base_directory, "gdsc1_orig.csv"), method = "wget",
+              quiet = TRUE)
+download.file("ftp://ftp.sanger.ac.uk/pub4/cancerrxgene/releases/release-8.2/GDSC2_public_raw_data_25Feb20.csv", paste0(base_directory, "gdsc2_orig.csv"), method = "wget",
+              quiet = TRUE)
+download.file("ftp://ftp.sanger.ac.uk/pub4/cancerrxgene/releases/release-8.2/Cell_Lines_Details.xlsx", paste0(base_directory, "CL_gdsc.xlsx"), method = "wget", quiet = TRUE)
+download.file("ftp://ftp.sanger.ac.uk/pub4/cancerrxgene/releases/release-8.2/screened_compunds_rel_8.2.csv", paste0(base_directory, "drug_gdsc.csv"), method = "wget",
+              quiet = TRUE)
+
+curl::curl_download("https://static-content.springer.com/esm/art%3A10.1038%2Fs41586-018-0722-x/MediaObjects/41586_2018_722_MOESM1_ESM.txt", paste0(base_directory, "ccle_orig.tsv"))
+curl::curl_download("https://static-content.springer.com/esm/art%3A10.1038%2Fnature11735/MediaObjects/41586_2012_BFnature11735_MOESM103_ESM.xls", paste0(base_directory, "annotate_ccle.xls"))
+
+curl::curl_download("https://static-content.springer.com/esm/art%3A10.1038%2Fnature15736/MediaObjects/41586_2015_BFnature15736_MOESM23_ESM.xlsx", paste0(base_directory, "GDSC_to_CCLE.xlsx"))
+```

@@ -1,0 +1,19 @@
+Package: shinyDrugScreen
+Type: Package
+Title: Shiny App for Visualization of Raw Drug Screening Data
+Authors@R: c(
+        person("Zoe L","Rehnberg",email = "zrehnber@umich.edu", role = "cre"),
+        person("Johann A", "Gagnon-Bartsch", email = "johanngb@umich.edu", role = "aut"))
+Description: A Shiny app to display plots (format, heatmap, and dose-response curve) and provide basic drug screening information for the raw data from GDSC and CCLE.
+License: GPL-3
+Date: 2021-03-11
+Version: 0.9
+Depends: R (>= 3.5.0)
+Imports:
+        ggplot2,
+        scales,
+        shiny,
+        shinythemes,
+        RColorBrewer,
+        DT
+RoxygenNote: 7.1.1

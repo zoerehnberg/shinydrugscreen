@@ -1,0 +1,2 @@
+FROM shinydrugscreenarchive
+RUN su - rep -c 'cd /home/rep && make dockerapp'
