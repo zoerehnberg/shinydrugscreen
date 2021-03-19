@@ -2,9 +2,8 @@
 
 ## How to Use This Repository
 
-The Shiny app can be launched from a docker image or from the R package `shinyDrugScreen`.
-- Download and run the docker image (`docker run -it --rm -p 127.0.0.1:80:80 shinydrugscreen`) to launch the Shiny app. The image is available on dockerhub () or can be downloaded from . For archival purposes, a separate docker image containing both the original and processed data also exists ().
-- Download the `shinyDrugScreen` package, install it in R, and run `shinyDrugScreen::launchApp()`.
+- **Download the docker image.** It is available on dockerhub () or can be downloaded from . Run the image (`docker run -it --rm -p 127.0.0.1:80:80 shinydrugscreen`) to launch the Shiny app. For archival purposes, a separate docker image containing both the original and processed data also exists ().
+- **Download the `shinyDrugScreen` package.** Install the package in R and run `shinyDrugScreen::launchApp()` to launch the Shiny app.
 
 ## Visualization
 
