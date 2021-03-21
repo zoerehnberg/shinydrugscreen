@@ -2,8 +2,12 @@
 
 ## How to Use This Repository
 
-- **Download the docker image.** It is available on dockerhub (https://hub.docker.com/repository/docker/zrehnber/shinydrugscreen) or can be downloaded from https://www.dropbox.com/s/n2faw8omos3obsv/shinydrugscreen.tar.gz?dl=0. Run the image (`docker run -it --rm -p 127.0.0.1:80:80 shinydrugscreen`) to launch the Shiny app. For archival purposes, a separate docker image containing both the original and processed data also exists (https://www.dropbox.com/s/dhilekgeqpa4tjv/shinydrugscreenarchive.tar.gz?dl=0).
-- **Download the `shinyDrugScreen` package.** Install the package in R and run `shinyDrugScreen::launchApp()` to launch the Shiny app.
+- **Download the docker image.** It is available on dockerhub (https://hub.docker.com/repository/docker/zrehnber/shinydrugscreen) and can be run with
+
+    docker run -it --rm -p 127.0.0.1:80:80 zrehnber/shinydrugscreen
+
+For archival purposes the image is also saved at https://www.dropbox.com/s/n2faw8omos3obsv/shinydrugscreen.tar.gz?dl=0. Also for archival purposes, a larger docker image containing both the original and processed data also exists (https://www.dropbox.com/s/dhilekgeqpa4tjv/shinydrugscreenarchive.tar.gz?dl=0).
+- **Download the `shinyDrugScreen` package.** It is available under "Releases."  Install the package in R and run `shinyDrugScreen::launchApp()` to launch the Shiny app.
 
 ## Visualization
 
