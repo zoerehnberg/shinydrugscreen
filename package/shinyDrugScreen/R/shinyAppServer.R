@@ -25,7 +25,7 @@ server <- function(input, output) {
       rv$rep_gdsc <- NULL
       selectInput(inputId = "clID",
                   label = "Select or enter a cell line ID:",
-                  choices = sort(ID_all$clID_gdsc1))
+                  choices = sort(shinyDrugScreen::ID_all$clID_gdsc1))
     }
   })
   
@@ -79,7 +79,7 @@ server <- function(input, output) {
       rv$rep_ccle <- NULL
       selectInput(inputId = "clID_ccle",
                   label = "Select or enter a cell line ID:",
-                  choices = sort(ID_all$clID_ccle))
+                  choices = sort(shinyDrugScreen::ID_all$clID_ccle))
     }
   })
   
@@ -133,7 +133,7 @@ server <- function(input, output) {
       rv$rep_gdsc2 <- NULL
       selectInput(inputId = "clID_gdsc2",
                   label = "Select or enter a cell line ID:",
-                  choices = sort(ID_all$clID_gdsc2))
+                  choices = sort(shinyDrugScreen::ID_all$clID_gdsc2))
     }
   })
   
@@ -189,7 +189,7 @@ server <- function(input, output) {
       rv$rep_gdsc <- NULL
       selectInput(inputId = "drugID",
                   label = "Select or enter a drug ID:",
-                  choices = sort(ID_all$drugID_gdsc1))
+                  choices = sort(shinyDrugScreen::ID_all$drugID_gdsc1))
     }
   })
   
@@ -244,7 +244,7 @@ server <- function(input, output) {
       rv$rep_ccle <- NULL
       selectInput(inputId = "drugID_ccle",
                   label = "Select or enter a drug ID:",
-                  choices = sort(ID_all$drugID_ccle))
+                  choices = sort(shinyDrugScreen::ID_all$drugID_ccle))
     }
   })
   
@@ -298,7 +298,7 @@ server <- function(input, output) {
       rv$rep_gdsc2 <- NULL
       selectInput(inputId = "drugID_gdsc2",
                   label = "Select or enter a drug ID:",
-                  choices = sort(ID_all$drugID_gdsc2))
+                  choices = sort(shinyDrugScreen::ID_all$drugID_gdsc2))
     }
   })
   
@@ -353,14 +353,14 @@ server <- function(input, output) {
   
   output$drugTable <- renderDataTable({
     if(rv$dset == "g1"){
-      tmp <- subset(format_gdsc1, SCAN_ID == rv$scan)
+      tmp <- subset(shinyDrugScreen::format_gdsc1, SCAN_ID == rv$scan)
       tmp <- tmp[,c(2,5,3,4)]
       names(tmp) <- c("Drug", "Row", "Start Column", "End Column")
       tmp <- tmp[order(tmp$Row),]
       tmp
     }
     else if(rv$dset == "c"){
-      tmp <- subset(shiny_ccle, ASSAY_PLATE_NAME == rv$scan & WELL_TYPE == "SA" &
+      tmp <- subset(shinyDrugScreen::shiny_ccle, ASSAY_PLATE_NAME == rv$scan & WELL_TYPE == "SA" &
                       CONCENTRATION == 8, select = c(3,4,6))
       tmp$END <- tmp$ROW_ID + 14
       names(tmp) <- c("Drug","Column","Start Row","End Row")
@@ -368,7 +368,7 @@ server <- function(input, output) {
       tmp
     }
     else if(rv$dset == "g2"){
-      tmp <- subset(format_gdsc2, SCAN_ID == rv$scan)
+      tmp <- subset(shinyDrugScreen::format_gdsc2, SCAN_ID == rv$scan)
       if(tmp$MAX_ROW[1] == tmp$MIN_ROW[1]){
         tmp <- tmp[,c(2,4,7,5)]
         names(tmp) <- c("Drug", "Row", "Start Column", "End Column")
@@ -411,12 +411,14 @@ server <- function(input, output) {
   
   # create the data tables
   output$clInfo <- renderDataTable({
-    map_CL[,c("COSMIC ID","CCLE Name","GDSC Name","Site GDSC","Histology GDSC")]
+    shinyDrugScreen::map_CL[,c("COSMIC ID","CCLE Name","GDSC Name","Site GDSC",
+                               "Histology GDSC")]
   },
   rownames = FALSE, options = list(info = FALSE, lengthChange = FALSE))
   output$drugInfo <- renderDataTable({
-    map_drug[,c("CCLE ID","CCLE Name 1","CCLE Name 2","GDSC ID","GDSC Name",
-                "Target GDSC","Target Pathway GDSC")]
+    shinyDrugScreen::map_drug[,c("CCLE ID","CCLE Name 1","CCLE Name 2",
+                                 "GDSC ID","GDSC Name","Target GDSC",
+                                 "Target Pathway GDSC")]
   },
   rownames = FALSE, options = list(info = FALSE, lengthChange = FALSE))
 }

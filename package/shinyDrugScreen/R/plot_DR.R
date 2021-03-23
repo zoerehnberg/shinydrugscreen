@@ -1,5 +1,5 @@
 # plot dose-response observations for one GDSC combo
-plot.DR_gdsc <- function(dat = shiny_gdsc1, combo){
+plot.DR_gdsc <- function(dat = shinyDrugScreen::shiny_gdsc1, combo){
   dat <- fastSubset_gdsc1(combo = combo)
   medUC <- 2^unique(dat$UNTREAT)
   
@@ -27,7 +27,7 @@ plot.DR_gdsc <- function(dat = shiny_gdsc1, combo){
 }
 
 # plot dose-response observations for all GDSC reps
-plotReps.DR_gdsc <- function(dat = shiny_gdsc1, combo){
+plotReps.DR_gdsc <- function(dat = shinyDrugScreen::shiny_gdsc1, combo){
   if(is.null(combo)) return(NULL)
   dat <- subset(dat, COMBO_ID %in% combo,
                 select = c("COMBO_ID","CONC","INTENSITY","UNTREAT"))
@@ -55,7 +55,7 @@ plotReps.DR_gdsc <- function(dat = shiny_gdsc1, combo){
 }
 
 # plot dose-response observations for one CCLE combo
-plot.DR_ccle <- function(dat = shiny_ccle, combo){
+plot.DR_ccle <- function(dat = shinyDrugScreen::shiny_ccle, combo){
   dat <- fastSubset_ccle(combo = combo)
   medUC <- 2^unique(dat$UNTREAT)
   
@@ -86,7 +86,7 @@ plot.DR_ccle <- function(dat = shiny_ccle, combo){
 }
 
 # plot dose-response observations for all CCLE reps
-plotReps.DR_ccle <- function(dat = shiny_ccle, combo){
+plotReps.DR_ccle <- function(dat = shinyDrugScreen::shiny_ccle, combo){
   if(is.null(combo)) return(NULL)
   dat <- subset(dat, COMBO_ID %in% combo,
                 select = c("COMBO_ID","CONCENTRATION","VALUE","UNTREAT"))
@@ -114,7 +114,7 @@ plotReps.DR_ccle <- function(dat = shiny_ccle, combo){
 }
 
 # plot dose-response observations for all GDSC2 reps
-plot.DR_gdsc2 <- function(dat = shiny_gdsc2, combo){
+plot.DR_gdsc2 <- function(dat = shinyDrugScreen::shiny_gdsc2, combo){
   dat <- subset(dat, COMBO_ID == combo)
   medUC <- 2^unique(dat$UNTREAT)
   
@@ -141,7 +141,7 @@ plot.DR_gdsc2 <- function(dat = shiny_gdsc2, combo){
 }
 
 # plot dose-response observations for all GDSC2 reps
-plotReps.DR_gdsc2 <- function(dat = shiny_gdsc2, combo){
+plotReps.DR_gdsc2 <- function(dat = shinyDrugScreen::shiny_gdsc2, combo){
   if(is.null(combo)) return(NULL)
   dat <- subset(dat, COMBO_ID %in% combo,
                 select = c("COMBO_ID","CONC","INTENSITY","UNTREAT"))
