@@ -1,6 +1,10 @@
-.PHONY: build download process package clean dockerapp archive
+.PHONY: builddocker build rerun download process package clean dockeronly archive
 
-build: download process
+builddocker: build installpackage dockeronly 
+
+build: download process package
+
+rerun: clean process package
 
 download:
 	cd data && R -e 'rmarkdown::render("download.Rmd")'
@@ -20,19 +24,23 @@ process:
 package:
 	cp data/processed/* package/shinyDrugScreen/data/
 	R CMD build package/shinyDrugScreen
-	rm package/shinyDrugScreen/data/*
+	rm package/shinyDrugScreen/data/*  # to save space
+
+installpackage:
+	R CMD INSTALL shinyDrugScreen*.tar.gz
 
 clean:
 	echo "Deleting all processed data and output..."
-	rm -f data/processed
+	rm -f data/processed/*
 	rm -f analysis/*.html
 	rm -f archive.tar.bz2
 	rm -f shinyDrugScreen*.tar.gz
 	R -e 'remove.packages("shinyDrugScreen")'
 
-dockerapp: package
-	R CMD INSTALL shinyDrugScreen*.tar.gz
-	rm -rf analysis data package .git* shinyDrugScreen*.tar.gz makefile
+dockeronly:
+	# To save space:
+	# Remove package file
+	rm -f shinyDrugScreen*.tar.gz
 
 archive:
 	rm -f archive.tar.bz2
