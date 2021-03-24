@@ -1,5 +1,5 @@
 # plot a GDSC heatmap
-plot.heat_gdsc <- function(data = shiny_gdsc1, scan){
+plot.heat_gdsc <- function(data = shinyDrugScreen::shiny_gdsc1, scan){
   # get data for the plate of interest
   use.dat <- dplyr::filter(data, SCAN_ID == scan)[,c("POSITION","INTENSITY",
                                                      "UNTREAT")]
@@ -56,7 +56,7 @@ plot.heat_gdsc <- function(data = shiny_gdsc1, scan){
 }
 
 # plot a CCLE heatmap
-plot.heat_ccle <- function(data = shiny_ccle, scan){
+plot.heat_ccle <- function(data = shinyDrugScreen::shiny_ccle, scan){
   # get data for the plate of interest
   use.dat <- dplyr::filter(data, ASSAY_PLATE_NAME == scan)[,c("COLUMN_ID","ROW_ID",
                                                               "VALUE","UNTREAT")]
@@ -102,7 +102,7 @@ plot.heat_ccle <- function(data = shiny_ccle, scan){
 }
 
 # plot a GDSC2 heatmap
-plot.heat_gdsc2 <- function(data = shiny_gdsc2, scan){
+plot.heat_gdsc2 <- function(data = shinyDrugScreen::shiny_gdsc2, scan){
   use.dat <- dplyr::filter(data, SCAN_ID == scan)[,c("POSITION","INTENSITY",
                                                      "UNTREAT")]
   # get row/column info

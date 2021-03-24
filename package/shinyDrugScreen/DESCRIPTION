@@ -9,6 +9,7 @@ License: GPL-3
 Date: 2021-03-11
 Version: 0.9
 Depends: R (>= 3.5.0)
+LazyData: true
 Imports:
         ggplot2,
         scales,

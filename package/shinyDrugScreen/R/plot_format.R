@@ -1,5 +1,5 @@
 # plot a GDSC plate layout
-plot.form_gdsc <- function(dat = shiny_gdsc1, plate, combo){
+plot.form_gdsc <- function(dat = shinyDrugScreen::shiny_gdsc1, plate, combo){
   dat <- subset(dat, SCAN_ID == plate, select = c("POSITION","TAG","COMBO_ID"))
   if(nrow(subset(dat, COMBO_ID == combo)) == 9){
     myColors <- c("grey0","grey10","grey20","grey30","grey40", "grey50",
@@ -57,7 +57,7 @@ plot.form_gdsc <- function(dat = shiny_gdsc1, plate, combo){
 }
 
 # plot a CCLE plate layout
-plot.form_ccle <- function(dat = shiny_ccle, plate, drug){
+plot.form_ccle <- function(dat = shinyDrugScreen::shiny_ccle, plate, drug){
   # subset to columns of interest
   dat <- subset(dat, ASSAY_PLATE_NAME == plate,
                 select = c("COLUMN_ID","ROW_ID","WELL_TYPE","CONCENTRATION","COMPOUND"))
@@ -114,7 +114,7 @@ plot.form_ccle <- function(dat = shiny_ccle, plate, drug){
 }
 
 # plot a GDSC2 plate layout
-plot.form_gdsc2 <- function(dat = shiny_gdsc2, plate, combo){
+plot.form_gdsc2 <- function(dat = shinyDrugScreen::shiny_gdsc2, plate, combo){
   dat <- subset(dat, SCAN_ID == plate, select = c("COMBO_ID","TAG","POSITION"))
   dat <- dat[order(dat$TAG),]
   toDrug <- function(x){
